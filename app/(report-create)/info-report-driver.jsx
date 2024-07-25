@@ -29,14 +29,14 @@ const InfoReportDriver = () => {
   const navigation = useNavigation();
   const context = useGlobalContext();
   const { setCreatingReport, creatingReport, user } = context;
-  const isYours = creatingReport.infoReportDriverA ? false : true;
+  const isYours = creatingReport?.infoReportDriverA ? false : true;
   const initialFormState = {
     vehicle: null,
     driver: null,
-    damages: "Bad Things"
+    damages: ""
   };
   const [form, setForm] = useState(initialFormState);
-  const [vehiclePlate, setVehiclePlate] = useState("5678DEF")
+  const [vehiclePlate, setVehiclePlate] = useState(isYours?user:"")
 
   const [loadingList, setLoadingList] = useState(false);
   const [drivers, setDrivers] = useState([]);
@@ -67,9 +67,10 @@ const InfoReportDriver = () => {
 
   useEffect(() => {
     if (isYours) {
-      setVehiclePlate(user)
       searchDriversAux(user)
       searchVehicle(user)
+    }else{
+      setVehiclePlate("")
     }
   }, []);
 
@@ -88,6 +89,7 @@ const InfoReportDriver = () => {
       setForm(initialFormState)
       navigation.navigate('(report-create)/info-report-driver');
     }
+    
   }
 
   const handleOnNext = () =>  {
@@ -106,7 +108,7 @@ const InfoReportDriver = () => {
       setCreatingReport(newReport)
       setForm(initialFormState)
       setDrivers([])
-      setVehiclePlate("5678DEF")
+      setVehiclePlate("")
       console.log(JSON.stringify(form))
       navigation.navigate('(report-create)/info-report-driver');
     }else{
@@ -138,7 +140,7 @@ const InfoReportDriver = () => {
 
   const handleCancel = () =>{
     setCreatingReport(null)
-    router.push("create-report")
+    router.push("reports")
   }
 
   return (
@@ -152,7 +154,7 @@ const InfoReportDriver = () => {
         </>
       }
     />
-      <View className="px-4 w-full flex-1 flex flex-col ">
+      <ScrollView className="px-4 w-full flex-1 flex flex-col ">
         
         <FormFieldTitle otherStyles="mt-5" title={"Vehicle"} />
         <SearchInput 
@@ -167,14 +169,10 @@ const InfoReportDriver = () => {
 
         <FormFieldTitle otherStyles="mt-5" title={"Drivers"} />
         <View className=" flex-1">
-        {loadingList ? (
-          <ActivityIndicator size="large" color="#0000ff" />
-        ) : (
-          
-            <>
-            {drivers.length > 0 ? (
+        
               <FlatList
                 data={drivers}
+                horizontal={true}
                 keyExtractor={(item) => item.id.toString()}
                 renderItem={({ item }) => (
                   <DriverCard 
@@ -192,11 +190,6 @@ const InfoReportDriver = () => {
                 )}
                 contentContainerStyle={{ paddingBottom: 20 }}
               />
-            ) : (
-              <Text className="text-lg text-center mb-4 ">No drivers for this vehicle</Text>
-            )}
-            </>
-        )}
         </View>
 
         <Text className=" w-full text-base text-gray-100 font-pmedium ">Selected Driver: <Text className={`${form.driver?" text-secondary-100":" text-gray-100"}  text-lg`}>{form.driver? getDriveName(form.driver):"No driver selected"}</Text></Text>
@@ -210,7 +203,7 @@ const InfoReportDriver = () => {
           numberOfLines={5} 
           multiline={true}
         />
-      </View>
+      </ScrollView>
       <View className=" flex flex-row w-full my-2 px-4">
           <CustomButton 
             title={"Cancel"}

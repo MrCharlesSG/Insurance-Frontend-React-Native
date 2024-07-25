@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, Image } from "react-native";
-
 import { icons } from "../constants";
 import FormFieldTitle from "./FormFieldTitle";
 
@@ -10,18 +9,17 @@ const FormField = ({
   placeholder,
   handleChangeText,
   otherStyles,
-  editable,
+  editable = true,
+  error,
   ...props
 }) => {
   const [showPassword, setShowPassword] = useState(false);
 
   return (
     <View className={`space-y-2 ${otherStyles}`}>
-      <FormFieldTitle 
-        title={title}
-      />
-
-      <View className="w-full py-4 px-4 bg-white rounded-2xl border-2 border-slate-50 focus:border-secondary flex flex-row items-center">
+      <FormFieldTitle title={title} />
+      
+      <View className={`w-full py-4 px-4 bg-white rounded-2xl border-2 ${error ? 'border-red-500' : 'border-slate-50'} focus:border-secondary flex flex-row items-center`}>
         <TextInput
           className="flex-1 text-secondary font-psemibold text-base"
           value={value}
@@ -43,6 +41,12 @@ const FormField = ({
           </TouchableOpacity>
         )}
       </View>
+      
+      {error && (
+        <Text className=" text-red text-sm mt-1">
+          {error}
+        </Text>
+      )}
     </View>
   );
 };

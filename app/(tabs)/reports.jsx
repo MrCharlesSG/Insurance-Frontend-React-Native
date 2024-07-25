@@ -33,11 +33,13 @@ const Reports = () => {
 
   useFocusEffect(
     useCallback(() => {
+      console.log("On callback")
       onRefresh();
     }, [])
   );
 
   useEffect(() => {
+    console.log("On filter")
     onRefresh()
   }, [filter])
 

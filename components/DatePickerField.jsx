@@ -10,13 +10,14 @@ const DatePickerField = ({
   placeholder,
   handleChange,
   otherStyles,
+  error,
   ...props
 }) => {
   const [show, setShow] = useState(false);
   const [date, setDate] = useState(dayjs());
 
   useEffect(() => {
-    console.log(value)
+    console.log(value + " Is date")
     setDate(dayjs(value));
   }, [value]);
 
@@ -44,7 +45,11 @@ const DatePickerField = ({
           </Text>
         </View>
       </TouchableWithoutFeedback>
-
+      {error && (
+        <Text className=" text-red text-sm mt-1">
+          {error}
+        </Text>
+      )}
       {show && (
         <Modal
           transparent={false}

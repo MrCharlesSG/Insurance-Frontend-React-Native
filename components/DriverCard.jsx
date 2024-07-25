@@ -14,12 +14,11 @@ const DriverCard = ({driver, onPress, isSelected}) => {
   return (
     <TouchableOpacity
         onPress={onPress}
-      className=" justify-between flex-row bg-white border-2 border-slate-50 rounded-xl mt-2">
+      className={`justify-between items-center flex-row bg-white border-2 ${isSelected? " border-secondary-50 bg-indigo-50":" border-slate-50"} rounded-xl mt-2 mr-1 `}>
       <View className ="p-2">
         <Text className=" font-psemibold text-lg ">{getDriveName(driver)}</Text>
         
       </View>
-      <View className="w-1 rounded-r-xl" style={{backgroundColor: getStatusColor()}} />
     </TouchableOpacity>
   )
 }

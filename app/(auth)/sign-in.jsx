@@ -1,47 +1,34 @@
-import { useState } from "react";
+import React, { useState } from 'react';
 import { Link, router } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { View, Text, ScrollView, Dimensions, Alert, Image } from "react-native";
-
-import { Logo, FormField, CustomButton} from '../../components'
+import { View, Text, ScrollView, Dimensions, Alert } from "react-native";
+import { Formik } from 'formik';
+import * as yup from 'yup';
+import { Logo, FormField, CustomButton } from '../../components';
 import { signIn } from "../../lib/sb-auth";
 import { useGlobalContext } from "../../context/GlobalProvider";
 
 const SignIn = () => {
-
   const [isSubmitting, setSubmitting] = useState(false);
-  const [form, setForm] = useState({
-    username: "",
-    password: "",
+  const context = useGlobalContext();
+
+  const validationSchema = yup.object().shape({
+    username: yup.string().required('Username is required'),
+    password: yup.string().required('Password is required'),
   });
 
-  const context = useGlobalContext()
-
-  const submit = async () => {
-    /*if (form.username === "" || form.password === "") {
-      Alert.alert("Error", "Please fill in all fields");
-    }
-      */
-
+  const submit = async (values) => {
     setSubmitting(true);
 
     try {
-      //await signIn(form.username, form.password);
-      await signIn("1234ABC", "user", context);
-      
-      /*const result = await getCurrentUser();
-      setUser(result);
-      
-      setIsLogged(true);
-      */
-
+      await signIn(values.username, values.password, context);
       router.replace("/reports");
     } catch (error) {
       Alert.alert("Error", error.message);
     } finally {
       setSubmitting(false);
     }
-  }
+  };
 
   return (
     <SafeAreaView className="bg-primary h-full">
@@ -52,33 +39,47 @@ const SignIn = () => {
             minHeight: Dimensions.get("window").height - 100,
           }}
         >
-         <Logo />
+          <Logo />
 
           <Text className="text-2xl font-semibold text-gray-100 mt-10 font-psemibold">
             Log in to Insurance App
           </Text>
 
-          <FormField
-            title="username"
-            value={form.username}
-            handleChangeText={(e) => setForm({ ...form, username: e })}
-            otherStyles="mt-7"
-            keyboardType="username-address"
-          />
-
-          <FormField
-            title="Password"
-            value={form.password}
-            handleChangeText={(e) => setForm({ ...form, password: e })}
-            otherStyles="mt-7"
-          />
-
-          <CustomButton
-            title="Sign In"
-            handlePress={submit}
-            containerStyles="mt-7"
-            isLoading={isSubmitting}
-          />
+          <Formik
+            initialValues={{
+              username: '',
+              password: '',
+            }}
+            validationSchema={validationSchema}
+            onSubmit={submit}
+          >
+            {({ handleChange, handleBlur, handleSubmit, values, errors, touched, setFieldValue }) => (
+              <>
+                <FormField
+                  title="Username"
+                  value={values.username}
+                  handleChangeText={(text) => setFieldValue('username', text.replace(/\s/g, ''))}
+                  onBlur={handleBlur('username')}
+                  error={touched.username && errors.username}
+                  otherStyles="mt-7"
+                />
+                <FormField
+                  title="Password"
+                  value={values.password}
+                  handleChangeText={(text) => setFieldValue('password', text.replace(/\s/g, ''))}
+                  onBlur={handleBlur('password')}
+                  error={touched.password && errors.password}
+                  otherStyles="mt-7"
+                />
+                <CustomButton
+                  title="Sign In"
+                  handlePress={handleSubmit}
+                  containerStyles="mt-7"
+                  isLoading={isSubmitting}
+                />
+              </>
+            )}
+          </Formik>
 
           <View className="flex justify-center pt-5 flex-row gap-2">
             <Text className="text-lg text-gray-100 font-pregular">
@@ -94,7 +95,7 @@ const SignIn = () => {
         </View>
       </ScrollView>
     </SafeAreaView>
-  )
+  );
 }
 
-export default SignIn
+export default SignIn;

@@ -1,18 +1,23 @@
+// context/ProtectedLayout.js
+import { useNavigation } from '@react-navigation/native';
+import { router } from 'expo-router';
 import React from 'react';
-import { View } from 'react-native';
-import { Redirect } from 'expo-router';
+import { ActivityIndicator } from 'react-native';
 import { useGlobalContext } from './GlobalProvider';
 
 const ProtectedLayout = ({ children }) => {
-  const { loading, isLogged } = useGlobalContext();
+  const { isLogged, loading } = useGlobalContext();
 
-  if (loading) return null; // Puedes mostrar un spinner aquí si lo prefieres
-
-  if (!isLogged) {
-    return <Redirect href="/sign-in" />;
+  if (loading) {
+    return <ActivityIndicator size="large" color="#0000ff" />;
   }
 
-  return <View style={{ flex: 1 }}>{children}</View>;
+  if (!isLogged) {
+    router.push('(auth)/sign-in');
+    return null;
+  }
+
+  return children;
 };
 
 export default ProtectedLayout;

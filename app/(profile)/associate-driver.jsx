@@ -8,13 +8,16 @@ import DatePickerField from "../../components/DatePickerField";
 import { useGlobalContext } from '../../context/GlobalProvider';
 import CustomButton from '../../components/CustomButton';
 import { associateDriverByEmail, createDriver, getDriversByEmail } from '../../lib/sb-drivers';
-import prompt from 'react-native-prompt-android';
-import FormFieldTitle from '../../components/FormFieldTitle';
 import dayjs from 'dayjs';
+import { Formik } from 'formik';
+import * as yup from 'yup';
+import FormFieldTitle from '../../components/FormFieldTitle';
 
 const AssociateDriver = () => {
   const navigation = useNavigation();
   const context = useGlobalContext();
+  const [onAssociateLoading, setOnAssociateLoading] = useState(false);
+  const [onSearching, setOnSearching] = useState(false);
 
   const initialFormState = {
     name: "",
@@ -25,137 +28,122 @@ const AssociateDriver = () => {
     id: -1,
   };
 
-  const [form, setForm] = useState(initialFormState);
-  const [dialogEmail, setDialogEmail] = useState("");
-  const [onExistingLoading, setOnExistingLoading] = useState(false);
-  const [onAssociateLoading, setOnAssociateLoading] = useState(false);
+  const validationSchema = yup.object().shape({
+    name: yup.string().required('Name is required'),
+    surnames: yup.string().required('Surnames are required'),
+    passport: yup.string().required('Passport is required'),
+    email: yup.string().email('Invalid email').required('Email is required'),
+    date: yup.date().required('Date is required'),
+  });
 
-  const handleBack = () => {
-    router.back();
-  };
-
-  const handleExisting = () => {
-    setOnExistingLoading(true);
-    prompt(
-      'Enter Email',
-      'Please enter the email of the driver:',
-      [
-        {
-          text: 'Cancel',
-          onPress: () => setOnExistingLoading(false),
-          style: 'cancel'
-        },
-        {
-          text: 'OK',
-          onPress: (email) => handleEmailSubmission(email),
-        },
-      ],
-      {
-        type: 'email-address',
-        cancelable: false,
-        defaultValue: '',
-        placeholder: 'example@example.com'
-      }
-    );
-  };
-
-  const handleEmailSubmission = async (email) => {
+  const handleEmailSubmission = async (email, setFieldValue) => {
+    setOnSearching(true)
     try {
       const driver = await getDriversByEmail(context, email);
-      console.log(JSON.stringify(driver));
-      setForm({
-        ...driver,
-        date: dayjs(driver.birthday).toDate(),
-      });
+      setFieldValue('name', driver.name);
+      setFieldValue('surnames', driver.surnames);
+      setFieldValue('passport', driver.passport);
+      setFieldValue('email', driver.email);
+      setFieldValue('date', dayjs(driver.birthday).toDate());
+      setFieldValue('id', driver.id);
     } catch (error) {
       Alert.alert("Wrong Email", "Driver with " + email + " as email does not exist");
-    } finally {
-      setOnExistingLoading(false);
+    }finally{
+      setOnSearching(false)
     }
   };
 
-  const handleReset = () => {
-    setForm(initialFormState);
-  };
-
-  const handleAssociate = async () => {
+  const handleAssociate = async (values, resetForm) => {
+    setOnAssociateLoading(true)
     try {
-      setOnAssociateLoading(true);
-      if (form.id === -1) {
-        await createDriver(context, form);
+      if (values.id === -1) {
+        await createDriver(context, values);
       }
-      await associateDriverByEmail(context, form.email);
+      await associateDriverByEmail(context, values.email);
       navigation.navigate("(profile)/drivers");
     } catch (error) {
       Alert.alert("Error Associating", error.message);
-    } finally {
-      setOnAssociateLoading(false);
+    }finally{
+      setOnAssociateLoading(false)
     }
   };
 
   return (
     <SafeAreaView className="bg-primary h-full flex flex-col">
       <View className="mt-10">
-        <HeaderWithBack
-          handleBack={handleBack}
-          title={"Associate Driver"}
-        />
+        <HeaderWithBack handleBack={() => router.back()} title={"Associate Driver"} />
       </View>
       <ScrollView className="p-4">
-        <FormField
-          title={"Name"}
-          value={form.name}
-          placeholder={"Name of driver"}
-          handleChangeText={(e) => setForm({ ...form, id: -1, name: e })}
-          otherStyles={"mt-3"}
-        />
-        <FormField
-          title={"Surnames"}
-          value={form.surnames}
-          placeholder={"Lastname and surnames of driver"}
-          handleChangeText={(e) => setForm({ ...form, id: -1, surnames: e })}
-          otherStyles={"mt-3"}
-        />
-        <FormField
-          title={"Passport"}
-          placeholder={"Passport or ID of driver"}
-          value={form.passport}
-          handleChangeText={(e) => setForm({ ...form, id: -1, passport: e })}
-          otherStyles={"mt-3"}
-        />
-        <FormFieldTitle 
-          title={"Email"}
-          otherStyles={"mt-3 mb-2"}
-        />
-        <SearchInput
-          initialValue={form.email}
-          setValue={(e) => setForm({ ...form, id: -1, email: e })}
-          placeholder={"In existing press search"}
-          onPress={(query) => handleEmailSubmission(query)}
-          keyboardType={"email-addressasasd"}
-        />
-        <DatePickerField
-          title={"Birthday"}
-          value={form.date}
-          handleChange={(e) => setForm({ ...form, id: -1, date: e })}
-          otherStyles={"mt-3"}
-        />
+        <Formik
+          initialValues={initialFormState}
+          validationSchema={validationSchema}
+          onSubmit={(values, { resetForm }) => handleAssociate(values, resetForm)}
+        >
+          {({ handleChange, handleBlur, handleSubmit, setFieldValue, values, errors, touched, resetForm }) => (
+            <>
+              <FormField
+                title={"Name"}
+                value={values.name}
+                placeholder={"Name of driver"}
+                handleChangeText={handleChange('name')}
+                onBlur={handleBlur('name')}
+                error={touched.name && errors.name}
+                otherStyles={"mt-3"}
+              />
+              <FormField
+                title={"Surnames"}
+                value={values.surnames}
+                placeholder={"Lastname and surnames of driver"}
+                handleChangeText={handleChange('surnames')}
+                onBlur={handleBlur('surnames')}
+                error={touched.surnames && errors.surnames}
+                otherStyles={"mt-3"}
+              />
+              <FormField
+                title={"Passport"}
+                value={values.passport}
+                placeholder={"Passport or ID of driver"}
+                handleChangeText={handleChange('passport')}
+                onBlur={handleBlur('passport')}
+                error={touched.passport && errors.passport}
+                otherStyles={"mt-3"}
+              />
+              <FormFieldTitle title={"Email"} otherStyles={"mt-3 mb-2"} />
+              <SearchInput
+                initialValue={values.email}
+                setValue={email => setFieldValue('email', email)}
+                placeholder={"In existing press search"}
+                onPress={email => handleEmailSubmission(email, setFieldValue)}
+                keyboardType={"email-address"}
+                error={touched.email && errors.email}
+                loading={onSearching}
+              />
+              <DatePickerField
+                title={"Birthday"}
+                value={values.date}
+                handleChange={date => setFieldValue('date', date)}
+                error={touched.date && errors.date}
+                otherStyles={"mt-3"}
+              />
+              <View className="flex flex-row w-full my-2 px-4">
+                <CustomButton
+                  title={"Reset"}
+                  containerStyles={"flex-1 bg-white"}
+                  handlePress={resetForm}
+                  textStyles={"text-exalted"}
+                />
+                <View className="w-2" />
+                <CustomButton
+                  title={"Associate"}
+                  isLoading={onAssociateLoading}
+                  containerStyles={"flex-1"}
+                  handlePress={handleSubmit}
+                />
+              </View>
+            </>
+          )}
+        </Formik>
       </ScrollView>
-      <View className="flex flex-row w-full my-2 px-4">
-        <CustomButton
-          title={"Reset"}
-          containerStyles={"flex-1 bg-white"}
-          handlePress={handleReset}
-          textStyles={"text-exalted"}
-        />
-        <View className="w-2" />
-        <CustomButton
-          title={"Associate"}
-          isLoading={onAssociateLoading}
-          containerStyles={"flex-1"}
-          handlePress={handleAssociate}
-        />
-      </View>
     </SafeAreaView>
   );
 };

@@ -5,6 +5,7 @@ import { useGlobalContext } from '../../context/GlobalProvider'
 import FormFieldText from '../../components/FormFieldText'
 import HeaderWithBack from '../../components/HeaderWithBack'
 import { router, useNavigation } from 'expo-router'
+import { withAuth } from '../../context/WithAuth'
 
 const PersonalInfo = () => {
   const context = useGlobalContext()
@@ -64,4 +65,4 @@ const PersonalInfo = () => {
   )
 }
 
-export default PersonalInfo
+export default withAuth(PersonalInfo)
