@@ -1,0 +1,1 @@
+export const TOTAL_STEPS_CREATING_REPORT = 4
