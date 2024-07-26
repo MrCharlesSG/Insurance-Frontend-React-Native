@@ -24,7 +24,6 @@ import ProgressBar from "../../components/ProgressBar";
 import { TOTAL_STEPS_CREATING_REPORT } from "../../constants/values";
 import HeaderWithBack from "../../components/HeaderWithBack";
 
-
 const InfoReportDriver = () => {
   const navigation = useNavigation();
   const context = useGlobalContext();
@@ -36,192 +35,221 @@ const InfoReportDriver = () => {
     damages: ""
   };
   const [form, setForm] = useState(initialFormState);
-  const [vehiclePlate, setVehiclePlate] = useState(isYours?user:"")
-
+  const [vehiclePlate, setVehiclePlate] = useState(isYours ? user : "");
   const [loadingList, setLoadingList] = useState(false);
   const [drivers, setDrivers] = useState([]);
+  const [errors, setErrors] = useState({
+    vehicle: "",
+    driver: "",
+    damages: ""
+  });
 
   const title = isYours ? "Your" : "Other";
 
   const searchDrivers = async (query) => {
-    if(!isYours){
-      searchDriversAux(query)
+    if (!isYours) {
+      searchDriversAux(query);
     }
   };
 
   const searchDriversAux = async (query) => {
-    setLoadingList(true);
     const result = await getDriversByVehicle(context, query);
     setDrivers(result);
-    setLoadingList(false);
   };
 
   const searchVehicle = async (plate) => {
     try {
-      const vehicle = await getVehicleByPlate(context, plate)
-      setForm({...form, vehicle: vehicle})
+      const vehicle = await getVehicleByPlate(context, plate);
+      setForm({ ...form, vehicle: vehicle });
     } catch (error) {
-      Alert.alert("Wrong Vehicle", "Vehicle with that plate ("+plate+") Not Found")
+      Alert.alert("Wrong Vehicle", "Vehicle with that plate (" + plate + ") Not Found");
+      setErrors({ ...errors, vehicle: "Vehicle not found" });
     }
-  }
+  };
 
   useEffect(() => {
     if (isYours) {
-      searchDriversAux(user)
-      searchVehicle(user)
-    }else{
-      setVehiclePlate("")
+      console.log("--------------IS YOURS")
+      setVehiclePlate(user);
+      searchDriversAux(user);
+      searchVehicle(user);
     }
   }, []);
 
   const handleBack = () => {
-    if(isYours){
-      navigation.goBack()
-    }else{
-      setCreatingReport({
-        date:creatingReport.date,
-        details:creatingReport.details,
-        place:creatingReport.place
-      })
+    if (isYours) {
       setVehiclePlate(user)
-      searchDriversAux(user)
-      searchVehicle(user)
-      setForm(initialFormState)
+      navigation.goBack();
+    } else {
+      setCreatingReport({
+        date: creatingReport.date,
+        details: creatingReport.details,
+        place: creatingReport.place
+      });
+      setVehiclePlate(user);
+      searchDriversAux(user);
+      searchVehicle(user);
+      setForm(initialFormState);
       navigation.navigate('(report-create)/info-report-driver');
     }
-    
-  }
+  };
 
-  const handleOnNext = () =>  {
-    if(isYours){
+  const handleOnNext = () => {
+    let valid = true;
+    let newErrors = {
+      vehicle: "",
+      driver: "",
+      damages: ""
+    };
+
+    if (!form.vehicle) {
+      newErrors.vehicle = "Vehicle is required";
+      valid = false;
+    }
+    if (!form.driver) {
+      newErrors.driver = "Driver is required";
+      valid = false;
+    }
+    if (!form.damages) {
+      newErrors.damages = "Damages description is required";
+      valid = false;
+    }
+
+    if (!valid) {
+      setErrors(newErrors);
+      return;
+    }
+
+    if (isYours) {
       const newReport = {
-        infoReportDriverA:{
-          vehicle:form.vehicle,
-          driver:form.driver,
-          damages:form.damages,
+        infoReportDriverA: {
+          vehicle: form.vehicle,
+          driver: form.driver,
+          damages: form.damages,
           status: "ACCEPTED"
         },
         date: creatingReport.date,
         place: creatingReport.place,
         details: creatingReport.details
-      }
-      setCreatingReport(newReport)
-      setForm(initialFormState)
-      setDrivers([])
-      setVehiclePlate("")
-      console.log(JSON.stringify(form))
-      navigation.navigate('(report-create)/info-report-driver');
-    }else{
-      const newReport = {...creatingReport, 
-        infoReportDriverB:{
-          vehicle:form.vehicle,
-          driver:form.driver,
+      };
+      console.log("NEW")
+      setCreatingReport(newReport);
+      setForm(initialFormState);
+      setDrivers([]);
+      setVehiclePlate("");
+
+      console.log("Plate " + vehiclePlate)
+      console.log("Form "+  JSON.stringify(form))
+    } else {
+      const newReport = {
+        ...creatingReport,
+        infoReportDriverB: {
+          vehicle: form.vehicle,
+          driver: form.driver,
           status: "WAITING"
         }
-        
-      }
-      console.log(JSON.stringify(newReport))
-      setCreatingReport(newReport)
-      const reportToString = JSON.stringify(newReport)
-      console.log("ESTE ES EL REPORT A CREAR "+reportToString)
-      navigation.navigate('(report-create)/create-report-summary')
-    }     
-       
-  }
+      };
+      setCreatingReport(newReport);
+      navigation.navigate('(report-create)/create-report-summary');
+    }
+  };
 
   const handleOnQuery = (query) => {
-    if(!isYours){
+    if (!isYours) {
       setLoadingList(true);
-      setVehiclePlate(query)
-      searchVehicle(query)
+      setVehiclePlate(query);
+      searchVehicle(query);
       searchDrivers(query);
     }
-  }
+  };
 
-  const handleCancel = () =>{
-    setCreatingReport(null)
-    router.push("reports")
-  }
+  const handleCancel = () => {
+    setCreatingReport(null);
+    router.push("reports");
+  };
 
   return (
     <SafeAreaView className="bg-primary h-full flex flex-col">
-
-    <HeaderWithBack
-      handleBack={handleBack}
-      title={
-        <>
-          {`Create Report\n`}<Text className=" text-secondary-100">{`${title} Data`}</Text>
-        </>
-      }
-    />
+      <HeaderWithBack
+        handleBack={handleBack}
+        title={
+          <>
+            {`Create Report\n`}<Text className="text-secondary-100">{`${title} Data`}</Text>
+          </>
+        }
+      />
       <ScrollView className="px-4 w-full flex-1 flex flex-col ">
-        
         <FormFieldTitle otherStyles="mt-5" title={"Vehicle"} />
-        <SearchInput 
+        <SearchInput
           initialValue={vehiclePlate}
           placeholder={"Plate of the vehicle"}
           setValue={(e) => setVehiclePlate(e)}
-          onPress={(query) => {
-            handleOnQuery(query)
-          }}
+          onPress={(query) => handleOnQuery(query)}
           editable={!isYours}
+          error={errors.vehicle}
         />
 
         <FormFieldTitle otherStyles="mt-5" title={"Drivers"} />
-        <View className=" flex-1">
-        
-              <FlatList
-                data={drivers}
-                horizontal={true}
-                keyExtractor={(item) => item.id.toString()}
-                renderItem={({ item }) => (
-                  <DriverCard 
-                    driver={item}
-                    onPress={() => {
-                      if(form.driver && form.driver.id == item.id){
-                        setForm({ ...form, driver: null })
-                      }else{
-                        setForm({ ...form, driver: item })
-                      }
-
-                    }}
-                    isSelected={form.driver?form.driver.id===item.id:false}
-                  />
-                )}
-                contentContainerStyle={{ paddingBottom: 20 }}
+        <View className="flex-1">
+          <FlatList
+            data={drivers}
+            horizontal={true}
+            keyExtractor={(item) => item.id.toString()}
+            renderItem={({ item }) => (
+              <DriverCard
+                driver={item}
+                onPress={() => {
+                  if (form.driver && form.driver.id === item.id) {
+                    setForm({ ...form, driver: null });
+                  } else {
+                    setForm({ ...form, driver: item });
+                  }
+                }}
+                isSelected={form.driver ? form.driver.id === item.id : false}
               />
+            )}
+            contentContainerStyle={{ paddingBottom: 20 }}
+          />
         </View>
 
-        <Text className=" w-full text-base text-gray-100 font-pmedium ">Selected Driver: <Text className={`${form.driver?" text-secondary-100":" text-gray-100"}  text-lg`}>{form.driver? getDriveName(form.driver):"No driver selected"}</Text></Text>
+        <Text className="w-full text-base text-gray-100 font-pmedium">
+          Selected Driver: <Text className={`${form.driver ? "text-secondary-100" : "text-gray-100"} text-lg`}>{form.driver ? getDriveName(form.driver) : "No driver selected"}</Text>
+        </Text>
+        {errors.driver && (
+          <Text className=" text-red text-sm mt-1">
+            {errors.driver}
+          </Text>
+        )}
 
-        <FormField 
+        <FormField
           title={"Damages"}
           value={form.damages}
           placeholder={"What damages the vehicle has"}
-          handleChangeText={(e) => setForm({ ...form, damages:e})}
+          handleChangeText={(e) => setForm({ ...form, damages: e })}
           otherStyles={"mt-5"}
-          numberOfLines={5} 
+          numberOfLines={5}
           multiline={true}
+          error={errors.damages}
         />
       </ScrollView>
-      <View className=" flex flex-row w-full my-2 px-4">
-          <CustomButton 
-            title={"Cancel"}
-            containerStyles={"w-1/3 bg-white "}
-            textStyles={" text-red"}
-            handlePress={handleCancel}
-          />
-          <View className="w-2" />
-          <CustomButton 
-            title={"Next"}
-            containerStyles={"flex-1"}
-            handlePress={handleOnNext}
-          />
-        </View>
-        <ProgressBar
-          step={isYours? 2: 3}
-          total={TOTAL_STEPS_CREATING_REPORT+1}
+      <View className="flex flex-row w-full my-2 px-4">
+        <CustomButton
+          title={"Cancel"}
+          containerStyles={"w-1/3 bg-white "}
+          textStyles={"text-red"}
+          handlePress={handleCancel}
         />
+        <View className="w-2" />
+        <CustomButton
+          title={"Next"}
+          containerStyles={"flex-1"}
+          handlePress={handleOnNext}
+        />
+      </View>
+      <ProgressBar
+        step={isYours ? 2 : 3}
+        total={TOTAL_STEPS_CREATING_REPORT + 1}
+      />
     </SafeAreaView>
   );
 };
