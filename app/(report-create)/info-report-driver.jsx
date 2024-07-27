@@ -68,6 +68,7 @@ const InfoReportDriver = () => {
   };
 
   useEffect(() => {
+    console.log("---NEW")
     if (isYours) {
       console.log("--------------IS YOURS")
       setVehiclePlate(user);
@@ -137,6 +138,11 @@ const InfoReportDriver = () => {
       setForm(initialFormState);
       setDrivers([]);
       setVehiclePlate("");
+      setErrors({
+        vehicle: "",
+        driver: "",
+        damages: ""
+      })
 
       console.log("Plate " + vehiclePlate)
       console.log("Form "+  JSON.stringify(form))
@@ -160,6 +166,7 @@ const InfoReportDriver = () => {
       setVehiclePlate(query);
       searchVehicle(query);
       searchDrivers(query);
+      setLoadingList(false);
     }
   };
 
@@ -185,6 +192,7 @@ const InfoReportDriver = () => {
           placeholder={"Plate of the vehicle"}
           setValue={(e) => setVehiclePlate(e)}
           onPress={(query) => handleOnQuery(query)}
+          loading={loadingList}
           editable={!isYours}
           error={errors.vehicle}
         />

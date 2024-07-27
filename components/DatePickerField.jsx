@@ -26,7 +26,7 @@ const DatePickerField = ({
   };
 
   const handleAccept = () => {
-    handleChange(date.toDate());
+    handleChange(date.toDate().getTime());
     setShow(false);
   };
 
